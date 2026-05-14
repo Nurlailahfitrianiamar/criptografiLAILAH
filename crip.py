@@ -1,6 +1,5 @@
 import hashlib
-import os
-import json
+import os, json
 import getpass
 
 # nama file buat nyimpen data user
