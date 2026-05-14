@@ -1,264 +1,246 @@
 import hashlib
-import json
 import os
+import json
 import getpass
 
-# ─────────────────────────────────────────────
-#  File penyimpanan data pengguna
-# ─────────────────────────────────────────────
-DATA_FILE = "data_pengguna.json"
+# nama file buat nyimpen data user
+file_data = "data_pengguna.json"
 
-# ─────────────────────────────────────────────
-#  Kode warna ANSI
-# ─────────────────────────────────────────────
-RESET   = "\033[0m"
-BOLD    = "\033[1m"
-DIM     = "\033[2m"
-
-MERAH   = "\033[91m"
-HIJAU   = "\033[92m"
-KUNING  = "\033[93m"
-BIRU    = "\033[94m"
+# warna buat tampilan di terminal
+RESET = "\033[0m"
+BOLD = "\033[1m"
+DIM = "\033[2m"
+MERAH = "\033[91m"
+HIJAU = "\033[92m"
+KUNING = "\033[93m"
+BIRU = "\033[94m"
+CYAN = "\033[96m"
+PUTIH = "\033[97m"
+BG_HIJAU = "\033[42m"
+BG_MERAH = "\033[41m"
+BG_BIRU = "\033[44m"
+BG_HITAM = "\033[40m"
 MAGENTA = "\033[95m"
-CYAN    = "\033[96m"
-PUTIH   = "\033[97m"
-
-BG_BIRU   = "\033[44m"
-BG_HIJAU  = "\033[42m"
-BG_MERAH  = "\033[41m"
-BG_HITAM  = "\033[40m"
 
 
-# ══════════════════════════════════════════════
-#  UTILITAS TAMPILAN
-# ══════════════════════════════════════════════
-
+# fungsi bersihkan layar
 def bersihkan_layar():
     os.system("cls" if os.name == "nt" else "clear")
 
+# cetak garis pemisah
+def cetak_garis(kar="-", pjg=55, wrn=CYAN):
+    print(f"{wrn}{kar * pjg}{RESET}")
 
-def garis(karakter="═", lebar=60, warna=CYAN):
-    print(f"{warna}{karakter * lebar}{RESET}")
-
-
-def judul_banner():
+# tampilkan header program
+def tampil_header():
     bersihkan_layar()
-    garis("═", 60, CYAN)
-    print(f"{CYAN}║{RESET}{BG_BIRU}{BOLD}{PUTIH}{'🔐  SISTEM REGISTRASI & LOGIN AMAN':^58}{RESET}{CYAN}║{RESET}")
-    print(f"{CYAN}║{RESET}{'':^58}{CYAN}║{RESET}")
-    print(f"{CYAN}║{RESET}{BIRU}{'  Keamanan Password dengan Hash SHA-256':^58}{RESET}{CYAN}║{RESET}")
-    garis("═", 60, CYAN)
+    cetak_garis("=", 55, CYAN)
+    print(f"{CYAN}||{RESET}{BG_BIRU}{BOLD}{PUTIH}{'  PROGRAM REGISTRASI DAN LOGIN USER':^51}{RESET}{CYAN}||{RESET}")
+    print(f"{CYAN}||{RESET}{'':^51}{CYAN}||{RESET}")
+    print(f"{CYAN}||{RESET}{BIRU}{'  Password diamankan dengan SHA-256':^51}{RESET}{CYAN}||{RESET}")
+    cetak_garis("=", 55, CYAN)
     print()
 
+# tampilkan pesan berhasil
+def sukses(msg):
+    print(f"\n  {BG_HIJAU}{BOLD} OK {RESET} {HIJAU}{BOLD}{msg}{RESET}")
 
-def pesan_sukses(teks):
-    print(f"\n  {BG_HIJAU}{BOLD} ✔  {RESET} {HIJAU}{BOLD}{teks}{RESET}")
+# tampilkan pesan error
+def error(msg):
+    print(f"\n  {BG_MERAH}{BOLD} X {RESET} {MERAH}{BOLD}{msg}{RESET}")
 
+# tampilkan pesan info biasa
+def info(msg):
+    print(f"\n  {CYAN}>> {msg}{RESET}")
 
-def pesan_error(teks):
-    print(f"\n  {BG_MERAH}{BOLD} ✘  {RESET} {MERAH}{BOLD}{teks}{RESET}")
-
-
-def pesan_info(teks):
-    print(f"\n  {CYAN}ℹ  {teks}{RESET}")
-
-
-def tekan_enter():
-    print(f"\n{DIM}  Tekan Enter untuk melanjutkan...{RESET}", end="")
+# pause tunggu enter
+def tunggu():
+    print(f"\n{DIM}  Tekan Enter...{RESET}", end="")
     input()
 
-
-def kotak_info(judul, isi_dict):
-    lebar = 56
-    garis("─", lebar, KUNING)
+# tampilkan info dalam kotak sederhana
+def tampil_kotak(judul, data_dict):
+    cetak_garis("-", 52, KUNING)
     print(f"{KUNING}  {BOLD}{judul}{RESET}")
-    garis("─", lebar, KUNING)
-    for kunci, nilai in isi_dict.items():
-        print(f"  {KUNING}{kunci:<20}{RESET}: {PUTIH}{nilai}{RESET}")
-    garis("─", lebar, KUNING)
+    cetak_garis("-", 52, KUNING)
+    for k, v in data_dict.items():
+        print(f"  {KUNING}{k:<18}{RESET}: {PUTIH}{v}{RESET}")
+    cetak_garis("-", 52, KUNING)
 
 
-# ══════════════════════════════════════════════
-#  FUNGSI DATA
-# ══════════════════════════════════════════════
-
-def muat_data():
-    if not os.path.exists(DATA_FILE):
+# load data user dari file json
+def load_data():
+    if not os.path.exists(file_data):
         return {}
-    with open(DATA_FILE, "r") as f:
-        return json.load(f)
+    f = open(file_data, "r")
+    isi = json.load(f)
+    f.close()
+    return isi
+
+# simpan data user ke file json
+def save_data(data):
+    f = open(file_data, "w")
+    json.dump(data, f, indent=4)
+    f.close()
+
+# hash password pakai sha256
+def enkripsi(pw):
+    hasil = hashlib.sha256(pw.encode()).hexdigest()
+    return hasil
 
 
-def simpan_data(data):
-    with open(DATA_FILE, "w") as f:
-        json.dump(data, f, indent=4)
+# fitur registrasi user baru
+def daftar():
+    tampil_header()
+    print(f"  {MAGENTA}{BOLD}+-----------------------------+")
+    print(f"  |    FORM REGISTRASI USER    |")
+    print(f"  +-----------------------------+{RESET}\n")
 
+    db = load_data()
 
-def hash_sha256(password: str) -> str:
-    return hashlib.sha256(password.encode()).hexdigest()
+    uname = input(f"  {CYAN}  Username  : {RESET}").strip()
+    if uname == "":
+        error("Username gak boleh kosong!")
+        tunggu()
+        return
 
+    if uname in db:
+        error(f"Username {uname} udah ada, coba yang lain.")
+        tunggu()
+        return
 
-# ══════════════════════════════════════════════
-#  FITUR UTAMA
-# ══════════════════════════════════════════════
+    print(f"  {CYAN}  Password  : {RESET}", end="", flush=True)
+    pw = getpass.getpass(prompt="")
+    if pw == "":
+        error("Password gak boleh kosong!")
+        tunggu()
+        return
 
-def registrasi():
-    judul_banner()
-    print(f"  {MAGENTA}{BOLD}╔══════════════════════════════╗")
-    print(f"  ║   📋  REGISTRASI PENGGUNA   ║")
-    print(f"  ╚══════════════════════════════╝{RESET}\n")
+    print(f"  {CYAN}  Ulangi PW : {RESET}", end="", flush=True)
+    pw2 = getpass.getpass(prompt="")
 
-    data = muat_data()
+    if pw != pw2:
+        error("Password sama konfirmasi beda!")
+        tunggu()
+        return
 
-    print(f"  {PUTIH}Masukkan detail akun baru Anda:{RESET}")
+    # hash password sebelum disimpan
+    hpw = enkripsi(pw)
+    db[uname] = {"hash_pw": hpw}
+    save_data(db)
+
     print()
-
-    username = input(f"  {CYAN}➤  Username   : {RESET}").strip()
-    if not username:
-        pesan_error("Username tidak boleh kosong!")
-        tekan_enter()
-        return
-
-    if username in data:
-        pesan_error(f"Username '{username}' sudah terdaftar!")
-        tekan_enter()
-        return
-
-    print(f"  {CYAN}➤  Password   : {RESET}", end="", flush=True)
-    password = getpass.getpass(prompt="")
-    if not password:
-        pesan_error("Password tidak boleh kosong!")
-        tekan_enter()
-        return
-
-    print(f"  {CYAN}➤  Konfirmasi : {RESET}", end="", flush=True)
-    konfirmasi = getpass.getpass(prompt="")
-
-    if password != konfirmasi:
-        pesan_error("Password dan konfirmasi tidak cocok!")
-        tekan_enter()
-        return
-
-    hash_pw = hash_sha256(password)
-    data[username] = {"hash_password": hash_pw}
-    simpan_data(data)
-
-    print()
-    kotak_info("✔  REGISTRASI BERHASIL", {
-        "Username"      : username,
-        "Hash SHA-256"  : hash_pw[:32] + "...",
-        "Hash Lengkap"  : hash_pw,
+    tampil_kotak("REGISTRASI BERHASIL", {
+        "Username"    : uname,
+        "Hash (SHA256)": hpw[:30] + "...",
+        "Hash Lengkap" : hpw,
     })
 
-    pesan_sukses(f"Akun '{username}' berhasil dibuat dan disimpan!")
-    tekan_enter()
+    sukses(f"Akun {uname} berhasil didaftarkan!")
+    tunggu()
 
 
-def login():
-    judul_banner()
-    print(f"  {BIRU}{BOLD}╔══════════════════════════════╗")
-    print(f"  ║     🔑  LOGIN PENGGUNA      ║")
-    print(f"  ╚══════════════════════════════╝{RESET}\n")
+# fitur login user
+def masuk():
+    tampil_header()
+    print(f"  {BIRU}{BOLD}+-----------------------------+")
+    print(f"  |       FORM LOGIN USER       |")
+    print(f"  +-----------------------------+{RESET}\n")
 
-    data = muat_data()
+    db = load_data()
 
-    if not data:
-        pesan_info("Belum ada pengguna terdaftar. Silakan registrasi terlebih dahulu.")
-        tekan_enter()
+    if len(db) == 0:
+        info("Belum ada user yang daftar, registrasi dulu ya.")
+        tunggu()
         return
 
-    print(f"  {PUTIH}Masukkan kredensial Anda:{RESET}\n")
-
-    username = input(f"  {CYAN}➤  Username   : {RESET}").strip()
-    if username not in data:
-        pesan_error(f"Username '{username}' tidak ditemukan!")
-        tekan_enter()
+    uname = input(f"  {CYAN}  Username  : {RESET}").strip()
+    if uname not in db:
+        error(f"Username {uname} gak ketemu di database.")
+        tunggu()
         return
 
-    print(f"  {CYAN}➤  Password   : {RESET}", end="", flush=True)
-    password = getpass.getpass(prompt="")
+    print(f"  {CYAN}  Password  : {RESET}", end="", flush=True)
+    pw = getpass.getpass(prompt="")
 
-    hash_input    = hash_sha256(password)
-    hash_tersimpan = data[username]["hash_password"]
+    # hash password yang diinput lalu bandingkan
+    h_input = enkripsi(pw)
+    h_simpan = db[uname]["hash_pw"]
 
     print()
-    kotak_info("🔍  VERIFIKASI PASSWORD", {
-        "Username"       : username,
-        "Hash Input"     : hash_input[:32] + "...",
-        "Hash Tersimpan" : hash_tersimpan[:32] + "...",
-        "Cocok?"         : "✔  YA" if hash_input == hash_tersimpan else "✘  TIDAK",
+    tampil_kotak("CEK PASSWORD", {
+        "Username"      : uname,
+        "Hash Input"    : h_input[:28] + "...",
+        "Hash Disimpan" : h_simpan[:28] + "...",
+        "Cocok?"        : "YA" if h_input == h_simpan else "TIDAK",
     })
 
-    if hash_input == hash_tersimpan:
-        print(f"\n  {BG_HIJAU}{BOLD}{'  ✔  LOGIN BERHASIL! Selamat datang, ' + username + '!  ':^54}{RESET}")
+    if h_input == h_simpan:
+        print(f"\n  {BG_HIJAU}{BOLD}{'  LOGIN BERHASIL! Halo ' + uname + '!  ':^50}{RESET}")
     else:
-        print(f"\n  {BG_MERAH}{BOLD}{'  ✘  LOGIN GAGAL! Password salah.  ':^54}{RESET}")
+        print(f"\n  {BG_MERAH}{BOLD}{'  LOGIN GAGAL. Password salah!  ':^50}{RESET}")
 
-    tekan_enter()
+    tunggu()
 
 
-def lihat_pengguna():
-    judul_banner()
-    print(f"  {KUNING}{BOLD}╔═══════════════════════════════════╗")
-    print(f"  ║  📂  DAFTAR PENGGUNA TERDAFTAR  ║")
-    print(f"  ╚═══════════════════════════════════╝{RESET}\n")
+# tampilkan semua user yang sudah daftar
+def list_user():
+    tampil_header()
+    print(f"  {KUNING}{BOLD}+----------------------------------+")
+    print(f"  |    DAFTAR USER YANG TERDAFTAR    |")
+    print(f"  +----------------------------------+{RESET}\n")
 
-    data = muat_data()
+    db = load_data()
 
-    if not data:
-        pesan_info("Belum ada pengguna yang terdaftar.")
-        tekan_enter()
+    if len(db) == 0:
+        info("Belum ada user sama sekali.")
+        tunggu()
         return
 
-    garis("─", 60, KUNING)
-    print(f"  {KUNING}{BOLD}{'No':<5}{'Username':<20}{'Hash SHA-256 (sebagian)'}{RESET}")
-    garis("─", 60, KUNING)
+    cetak_garis("-", 55, KUNING)
+    print(f"  {KUNING}{BOLD}{'No':<5}{'Username':<18}{'Hash (sebagian)'}{RESET}")
+    cetak_garis("-", 55, KUNING)
 
-    for i, (username, info) in enumerate(data.items(), 1):
-        hash_pendek = info["hash_password"][:30] + "..."
-        print(f"  {PUTIH}{i:<5}{CYAN}{username:<20}{DIM}{hash_pendek}{RESET}")
+    nomor = 1
+    for uname, val in db.items():
+        hp = val["hash_pw"][:28] + "..."
+        print(f"  {PUTIH}{nomor:<5}{CYAN}{uname:<18}{DIM}{hp}{RESET}")
+        nomor += 1
 
-    garis("─", 60, KUNING)
-    print(f"\n  Total pengguna terdaftar: {HIJAU}{BOLD}{len(data)}{RESET}")
-    tekan_enter()
+    cetak_garis("-", 55, KUNING)
+    print(f"\n  Total: {HIJAU}{BOLD}{len(db)} user{RESET}")
+    tunggu()
 
 
-# ══════════════════════════════════════════════
-#  MENU UTAMA
-# ══════════════════════════════════════════════
-
-def menu_utama():
+# menu utama program
+def main():
     while True:
-        judul_banner()
-        print(f"  {PUTIH}{BOLD}Pilih menu di bawah ini:{RESET}\n")
-        print(f"  {BG_HITAM} {HIJAU} 1 {RESET}  {HIJAU}Registrasi Pengguna Baru{RESET}")
-        print(f"  {BG_HITAM} {BIRU} 2 {RESET}  {BIRU}Login Pengguna{RESET}")
-        print(f"  {BG_HITAM} {KUNING} 3 {RESET}  {KUNING}Lihat Daftar Pengguna{RESET}")
+        tampil_header()
+        print(f"  {PUTIH}{BOLD}Silakan pilih menu:{RESET}\n")
+        print(f"  {BG_HITAM} {HIJAU} 1 {RESET}  {HIJAU}Registrasi User Baru{RESET}")
+        print(f"  {BG_HITAM} {BIRU} 2 {RESET}  {BIRU}Login{RESET}")
+        print(f"  {BG_HITAM} {KUNING} 3 {RESET}  {KUNING}Lihat Semua User{RESET}")
         print(f"  {BG_HITAM} {MERAH} 0 {RESET}  {MERAH}Keluar{RESET}")
         print()
-        garis("─", 60, DIM)
+        cetak_garis("-", 55, DIM)
 
-        pilihan = input(f"\n  {CYAN}➤  Pilihan Anda [0-3]: {RESET}").strip()
+        pil = input(f"\n  {CYAN}  Pilihan [0-3] : {RESET}").strip()
 
-        if pilihan == "1":
-            registrasi()
-        elif pilihan == "2":
-            login()
-        elif pilihan == "3":
-            lihat_pengguna()
-        elif pilihan == "0":
-            judul_banner()
-            print(f"  {HIJAU}{BOLD}Terima kasih telah menggunakan program ini! 👋{RESET}\n")
-            garis("═", 60, CYAN)
+        if pil == "1":
+            daftar()
+        elif pil == "2":
+            masuk()
+        elif pil == "3":
+            list_user()
+        elif pil == "0":
+            tampil_header()
+            print(f"  {HIJAU}{BOLD}Makasih udah pake program ini!{RESET}\n")
+            cetak_garis("=", 55, CYAN)
             break
         else:
-            pesan_error("Pilihan tidak valid! Masukkan angka 0, 1, 2, atau 3.")
-            tekan_enter()
+            error("Pilihannya salah, masukkan 0 sampai 3.")
+            tunggu()
 
-
-# ══════════════════════════════════════════════
-#  ENTRY POINT
-# ══════════════════════════════════════════════
 
 if __name__ == "__main__":
-    menu_utama()
+    main()
