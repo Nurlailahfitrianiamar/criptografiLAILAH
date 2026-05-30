@@ -1,0 +1,15 @@
+============================================
+  DATA MAHASISWA - CONTOH FILE UNTUK DEMO
+============================================
+
+Nama    : Mahasiswa Kriptografi
+NIM     : 123456789
+Nilai   : A (Sangat Memuaskan)
+Prodi   : Teknik Informatika
+
+Catatan Rahasia:
+  File ini berisi data sensitif yang perlu diamankan.
+  Setelah dienkripsi dengan AES-256-CBC, isinya tidak
+  bisa dibaca tanpa password yang benar.
+
+AES-256-CBC adalah algoritma enkripsi paling aman!
