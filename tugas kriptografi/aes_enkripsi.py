@@ -1,13 +1,3 @@
-"""
-============================================================
-  APLIKASI ENKRIPSI FILE MENGGUNAKAN AES (Advanced Encryption Standard)
-  Materi  : DES dan AES - Implementasi AES menggunakan Python
-  Library : pycryptodome
-  Mode AES: CBC (Cipher Block Chaining)
-  Kunci   : AES-256 (256 bit / 32 byte)
-============================================================
-"""
-
 import os
 import sys
 from Crypto.Cipher import AES
